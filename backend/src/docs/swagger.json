@@ -1,0 +1,409 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Cleanomatics Task Management REST API",
+    "version": "1.0.0",
+    "description": "Production-grade RESTful API for Full-Stack Task Management System with in-memory persistence.",
+    "contact": {
+      "name": "Cleanomatics Engineering"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Tasks",
+      "description": "Task management operations"
+    },
+    {
+      "name": "System",
+      "description": "Health and operational checks"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "API health check",
+        "description": "Returns current server health status, uptime, and timestamp.",
+        "responses": {
+          "200": {
+            "description": "Server is operational",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": "healthy",
+                  "timestamp": "2026-10-07T14:30:00.000Z",
+                  "uptime": 45.2
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get all tasks with filtering, search, sorting & pagination",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Search keyword matching title or description (debounced on client)",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by task status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["all", "pending", "in_progress", "completed"],
+              "default": "all"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "description": "Filter by task priority",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["all", "low", "medium", "high"],
+              "default": "all"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Field to sort by",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["createdAt", "dueDate", "priority", "title"],
+              "default": "createdAt"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "description": "Sort direction",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-based)",
+            "required": false,
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": { "type": "integer", "default": 10 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Create a new task",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaskInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleTaskResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get task by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleTaskResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Tasks"],
+        "summary": "Update an existing task",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaskInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleTaskResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Delete a task",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task deleted successfully",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Task deleted successfully",
+                  "data": { "id": "d9b1c73a-4ef8-472e-8519-7e3f892a0001" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/reset": {
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Reset database to initial sample tasks",
+        "responses": {
+          "200": {
+            "description": "Tasks reset to defaults",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "Task database reset to default demo tasks"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "example": "Implement JWT refresh token rotation" },
+          "description": { "type": "string", "example": "Design and implement secure token refresh mechanism." },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed"], "example": "in_progress" },
+          "priority": { "type": "string", "enum": ["low", "medium", "high"], "example": "high" },
+          "dueDate": { "type": "string", "format": "date", "nullable": true, "example": "2026-10-15" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateTaskInput": {
+        "type": "object",
+        "required": ["title", "description"],
+        "properties": {
+          "title": { "type": "string", "example": "Refactor client modal accessibility" },
+          "description": { "type": "string", "example": "Ensure focus trapping, ARIA roles, and ESC key listener compliance." },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed"], "default": "pending" },
+          "priority": { "type": "string", "enum": ["low", "medium", "high"], "default": "medium" },
+          "dueDate": { "type": "string", "format": "date", "nullable": true, "example": "2026-10-25" }
+        }
+      },
+      "UpdateTaskInput": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed"] },
+          "priority": { "type": "string", "enum": ["low", "medium", "high"] },
+          "dueDate": { "type": "string", "format": "date", "nullable": true }
+        }
+      },
+      "TaskListResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Tasks retrieved successfully" },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Task" }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "pagination": {
+                "type": "object",
+                "properties": {
+                  "total": { "type": "integer", "example": 8 },
+                  "page": { "type": "integer", "example": 1 },
+                  "limit": { "type": "integer", "example": 10 },
+                  "totalPages": { "type": "integer", "example": 1 },
+                  "hasNextPage": { "type": "boolean", "example": false },
+                  "hasPrevPage": { "type": "boolean", "example": false }
+                }
+              },
+              "stats": {
+                "type": "object",
+                "properties": {
+                  "total": { "type": "integer", "example": 8 },
+                  "pending": { "type": "integer", "example": 3 },
+                  "in_progress": { "type": "integer", "example": 2 },
+                  "completed": { "type": "integer", "example": 3 }
+                }
+              }
+            }
+          }
+        }
+      },
+      "SingleTaskResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Task retrieved successfully" },
+          "data": { "$ref": "#/components/schemas/Task" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Validation failed for task data." },
+          "errors": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "cleanomatics-task-management-system",
+  "version": "1.0.0",
+  "description": "Full-Stack Task Management System with React, Vite, Node.js, and Express",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "test:backend": "cd backend && npm test",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "keywords": [
+    "task-management",
+    "react",
+    "vite",
+    "express",
+    "rest-api",
+    "full-stack"
+  ],
+  "author": "",
+  "license": "MIT"
+}
